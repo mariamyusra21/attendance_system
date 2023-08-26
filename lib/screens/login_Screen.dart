@@ -53,14 +53,14 @@ class _LoginScreenState extends State<LoginScreen> {
         .signInWithEmailAndPassword(
             email: emailController.text, password: passwordController.text)
         .then((value) {
-      if (_auth.currentUser!.uid == 'zttRIcEtSSV6KBaidwzhUf8xWqm2') {
+      if (_auth.currentUser!.email!.contains('t')) {
         Utilities().toastMessage(value.user!.email.toString());
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => TeacherHomePage()));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => TeacherHomePage()));
         setState(() {
           loading = false;
         });
-      } else {
+      } else if (_auth.currentUser!.email!.contains('s')) {
         Utilities().toastMessage(value.user!.email.toString());
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => StudentHomePage()));
@@ -75,6 +75,11 @@ class _LoginScreenState extends State<LoginScreen> {
         loading = false;
       });
     });
+  }
+
+  clearTextField() {
+    emailController.clear();
+    passwordController.clear();
   }
 
   @override
@@ -146,6 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
                       login();
+                      clearTextField();
                     }
                   },
                 ),

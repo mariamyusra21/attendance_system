@@ -15,23 +15,40 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   bool loading = false;
-  late String rollno = '';
+  late String name = '';
   late String email = '';
   late String password = '';
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final rollController = TextEditingController();
+  final nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   FirebaseAuth _auth = FirebaseAuth.instance;
   CollectionReference students =
       FirebaseFirestore.instance.collection('students');
 
-  Future<void> addUser() {
-    return students.add(
-        {'rollno': rollno, 'email': email, 'password': password}).then((value) {
+  // createUser(StudentModel student) async {
+  //   await students.add(student.toJson()).whenComplete(() {
+  //     Utilities().toastMessage('User Added');
+  //   }).catchError((e) {
+  //     Utilities().toastMessage(e);
+  //   });
+  createUser() {
+    _auth
+        .createUserWithEmailAndPassword(email: email, password: password)
+        .then((value) {
+      FirebaseFirestore.instance
+          .collection('Users')
+          .doc(value.user?.uid)
+          .set({'email': value.user?.email});
       Utilities().toastMessage('User Added');
     }).catchError((e) => Utilities().toastMessage(e));
+
+    // return students.add(
+    //     {'name': name, 'email': email, 'password': password}).then((value) {
+    //   Utilities().toastMessage('User Added');
+
+    //}).catchError((e) => Utilities().toastMessage(e));
   }
 
   @override
@@ -43,7 +60,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   clearTextField() {
-    rollController.clear();
+    nameController.clear();
     emailController.clear();
     passwordController.clear();
   }
@@ -88,7 +105,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: rollController,
+                      controller: nameController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
                           hintText: 'Roll No:',
@@ -96,7 +113,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           prefixIcon: Icon(Icons.note_add)),
                       validator: (value) {
                         if (value!.isEmpty) {
-                          return 'Enter a valid email';
+                          return 'Enter a valid roll number';
                         }
                         return null;
                       },
@@ -148,10 +165,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 onTap: () {
                   if (_formKey.currentState!.validate()) {
                     setState(() {
-                      rollno = rollController.text;
+                      name = nameController.text;
                       email = emailController.text;
                       password = passwordController.text;
-                      addUser();
+                      // createUser(student)
+                      createUser();
                       clearTextField();
                     });
                   }
