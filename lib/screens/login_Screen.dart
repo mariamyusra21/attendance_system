@@ -53,17 +53,20 @@ class _LoginScreenState extends State<LoginScreen> {
         .signInWithEmailAndPassword(
             email: emailController.text, password: passwordController.text)
         .then((value) {
-      if (_auth.currentUser!.email!.contains('t')) {
+      if (_auth.currentUser!.email!.endsWith('.t@gmail.com')) {
         Utilities().toastMessage(value.user!.email.toString());
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => TeacherHomePage()));
         setState(() {
           loading = false;
         });
-      } else if (_auth.currentUser!.email!.contains('s')) {
+      } else if (_auth.currentUser!.email!.endsWith('.s@gmail.com')) {
         Utilities().toastMessage(value.user!.email.toString());
-        Navigator.push(context,
-            MaterialPageRoute(builder: (context) => StudentHomePage()));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    StudentHomePage(userId: _auth.currentUser!.uid)));
         setState(() {
           loading = false;
         });

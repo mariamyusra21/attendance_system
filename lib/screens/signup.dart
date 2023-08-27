@@ -15,40 +15,32 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   bool loading = false;
-  late String name = '';
   late String email = '';
   late String password = '';
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  FirebaseAuth _auth = FirebaseAuth.instance;
-  CollectionReference students =
-      FirebaseFirestore.instance.collection('students');
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // createUser(StudentModel student) async {
-  //   await students.add(student.toJson()).whenComplete(() {
-  //     Utilities().toastMessage('User Added');
-  //   }).catchError((e) {
-  //     Utilities().toastMessage(e);
-  //   });
   createUser() {
     _auth
         .createUserWithEmailAndPassword(email: email, password: password)
         .then((value) {
-      FirebaseFirestore.instance
-          .collection('Users')
-          .doc(value.user?.uid)
-          .set({'email': value.user?.email});
-      Utilities().toastMessage('User Added');
+      if (_auth.currentUser!.email!.endsWith('.t@gmail.com')) {
+        FirebaseFirestore.instance
+            .collection('Teachers')
+            .doc(value.user?.uid)
+            .set({'email': value.user?.email});
+        Utilities().toastMessage('Teacher Added');
+      } else if (_auth.currentUser!.email!.endsWith('.s@gmail.com')) {
+        FirebaseFirestore.instance
+            .collection('Students')
+            .doc(value.user?.uid)
+            .set({'email': value.user?.email});
+        Utilities().toastMessage('Student Added');
+      }
     }).catchError((e) => Utilities().toastMessage(e));
-
-    // return students.add(
-    //     {'name': name, 'email': email, 'password': password}).then((value) {
-    //   Utilities().toastMessage('User Added');
-
-    //}).catchError((e) => Utilities().toastMessage(e));
   }
 
   @override
@@ -60,7 +52,6 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   clearTextField() {
-    nameController.clear();
     emailController.clear();
     passwordController.clear();
   }
@@ -105,23 +96,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: nameController,
-                      keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                          hintText: 'Roll No:',
-                          helperText: 'Enter your roll number',
-                          prefixIcon: Icon(Icons.note_add)),
-                      validator: (value) {
-                        if (value!.isEmpty) {
-                          return 'Enter a valid roll number';
-                        }
-                        return null;
-                      },
-                    ), // This is TextFormField for Roll No
-                    SizedBox(
-                      height: 30,
-                    ),
-                    TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
@@ -165,7 +139,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 onTap: () {
                   if (_formKey.currentState!.validate()) {
                     setState(() {
-                      name = nameController.text;
                       email = emailController.text;
                       password = passwordController.text;
                       // createUser(student)
