@@ -2,6 +2,7 @@ import 'package:attendance_sys/Response/utilities.dart';
 import 'package:attendance_sys/screens/signup.dart';
 import 'package:attendance_sys/screens/student_home.dart';
 import 'package:attendance_sys/screens/teacher_home.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +18,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
+  final resetEmailController = TextEditingController();
   final passwordController = TextEditingController();
+  final newPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool loading = false;
@@ -28,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
     emailController.dispose();
     passwordController.dispose();
+    newPasswordController.dispose();
+    resetEmailController.dispose();
   }
 
   // void signInAnonymously() {
@@ -40,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   //   });
   // }
 
-  void login() async {
+  void login(email, password) async {
     setState(() {
       loading = true;
     });
@@ -50,8 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // User Login...
 
     _auth
-        .signInWithEmailAndPassword(
-            email: emailController.text, password: passwordController.text)
+        .signInWithEmailAndPassword(email: email, password: password)
         .then((value) {
       if (_auth.currentUser!.email!.endsWith('.t@gmail.com')) {
         Utilities().toastMessage(value.user!.email.toString());
@@ -70,6 +74,24 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           loading = false;
         });
+      } else {
+        Utilities().toastMessage(value.user!.email.toString());
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    StudentHomePage(userId: _auth.currentUser!.uid)));
+        FirebaseFirestore.instance
+            .collection('Users')
+            .doc(_auth.currentUser!.uid)
+            .update({
+          "password": password,
+        }).then((_) {
+          Utilities().toastMessage('New Password Updated!');
+        });
+        setState(() {
+          loading = false;
+        });
       }
     }).onError((error, stackTrace) {
       debugPrint(error.toString());
@@ -83,6 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
   clearTextField() {
     emailController.clear();
     passwordController.clear();
+    newPasswordController.clear();
   }
 
   @override
@@ -153,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   title: 'LOGIN',
                   onTap: () {
                     if (_formKey.currentState!.validate()) {
-                      login();
+                      login(emailController.text, passwordController.text);
                       clearTextField();
                     }
                   },
@@ -183,8 +206,75 @@ class _LoginScreenState extends State<LoginScreen> {
                   )
                 ],
               ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextButton(
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('Change Password'),
+                            content: TextFormField(
+                                controller: resetEmailController,
+                                keyboardType: TextInputType.text,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                    hintText: 'Email',
+                                    helperText: 'Enter your Email',
+                                    prefixIcon: Icon(Icons.lock_open)),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Enter a new valid password';
+                                  }
+                                  return null;
+                                }),
+                            actions: [
+                              IconButton(
+                                onPressed: () {
+                                  resetPasswordEmail(resetEmailController.text);
+                                  // if (_formKey.currentState!.validate()) {
+                                  //   _formKey.currentState!.save();
+                                  //   changePassword(
+                                  //       newPasswordController.text);
+                                  //   clearTextField();
+                                  // }
+                                  // changePassword(newPasswordController.text);
+                                },
+                                icon: Icon(Icons.mail_lock),
+                              )
+                            ],
+                          );
+                        });
+                  },
+                  child: Text(
+                    "Forgot Password",
+                    style: TextStyle(color: Colors.deepOrange, fontSize: 18),
+                  ),
+                ),
+              )
             ]),
       ),
     );
+  }
+
+  void resetPasswordEmail(email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      Utilities().toastMessage('Password Reset Email has been sent');
+    } on FirebaseAuthException catch (e) {
+      // TODO
+      Utilities().toastMessage(e.toString());
+    }
+
+    // _auth.currentUser!.updatePassword(newPassword).then((value) {
+    //   FirebaseFirestore.instance.doc(_auth.currentUser!.uid).update({
+    //     "password": newPassword,
+    //   }).then((_) {
+    //     Utilities().toastMessage('Password Updated!');
+    //   });
+    // }).catchError((e) => Utilities().toastMessage(e));
   }
 }

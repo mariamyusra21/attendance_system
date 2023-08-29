@@ -23,7 +23,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  createUser() {
+  createUser(email, password) {
     _auth
         .createUserWithEmailAndPassword(email: email, password: password)
         .then((value) {
@@ -31,14 +31,20 @@ class _SignupScreenState extends State<SignupScreen> {
         FirebaseFirestore.instance
             .collection('Teachers')
             .doc(value.user?.uid)
-            .set({'email': value.user?.email});
+            .set({'email': value.user?.email, 'password': password});
         Utilities().toastMessage('Teacher Added');
       } else if (_auth.currentUser!.email!.endsWith('.s@gmail.com')) {
         FirebaseFirestore.instance
             .collection('Students')
             .doc(value.user?.uid)
-            .set({'email': value.user?.email});
+            .set({'email': value.user?.email, 'password': password});
         Utilities().toastMessage('Student Added');
+      } else {
+        FirebaseFirestore.instance
+            .collection('Users')
+            .doc(value.user?.uid)
+            .set({'email': value.user?.email, 'password': password});
+        Utilities().toastMessage('User Added');
       }
     }).catchError((e) => Utilities().toastMessage(e));
   }
@@ -54,26 +60,6 @@ class _SignupScreenState extends State<SignupScreen> {
   clearTextField() {
     emailController.clear();
     passwordController.clear();
-  }
-
-  void signup() {
-    setState(() {
-      loading = true;
-    });
-    _auth
-        .createUserWithEmailAndPassword(
-            email: emailController.text.toString(),
-            password: passwordController.text.toString())
-        .then((value) {
-      setState(() {
-        loading = false;
-      });
-    }).onError((error, stackTrace) {
-      Utilities().toastMessage(error.toString());
-      setState(() {
-        loading = true;
-      });
-    });
   }
 
   @override
@@ -139,10 +125,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 onTap: () {
                   if (_formKey.currentState!.validate()) {
                     setState(() {
-                      email = emailController.text;
-                      password = passwordController.text;
+                      // email = emailController.text;
+                      // password = passwordController.text;
                       // createUser(student)
-                      createUser();
+                      createUser(emailController.text, passwordController.text);
                       clearTextField();
                     });
                   }
